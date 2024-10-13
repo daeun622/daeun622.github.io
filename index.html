@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>떨어지는 음식 받기 게임 - 업그레이드 버전</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #game-area {
+            width: 100vw;
+            height: 100vh;
+            background-color: #87CEEB;
+            position: relative;
+        }
+        #basket {
+            width: 100px;
+            height: 50px;
+            background-color: #8B4513;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+        }
+        .food {
+            position: absolute;
+            font-size: 30px;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
+        }
+        #win-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            color: pink;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-area">
+        <div id="basket">🧺</div>
+        <div id="score">점수: 0</div>
+        <div id="win-message">YOU WIN!</div>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('game-area');
+        const basket = document.getElementById('basket');
+        const scoreElement = document.getElementById('score');
+        const winMessage = document.getElementById('win-message');
+        let score = 0;
+        let gameSpeed = 2;
+        let isGameOver = false;
+
+        const foods = ['🍔', '🍕', '🥤', '💩'];
+
+        function createFood() {
+            if (isGameOver) return;
+
+            const food = document.createElement('div');
+            food.classList.add('food');
+            food.style.left = `${Math.random() * (gameArea.clientWidth - 30)}px`;
+            food.style.top = '0px';
+            food.textContent = foods[Math.floor(Math.random() * foods.length)];
+            gameArea.appendChild(food);
+
+            let posY = 0;
+            const fallInterval = setInterval(() => {
+                posY += gameSpeed;
+                food.style.top = `${posY}px`;
+
+                if (posY + food.clientHeight > gameArea.clientHeight - basket.clientHeight) {
+                    if (isColliding(food, basket)) {
+                        if (food.textContent === '💩') {
+                            score = Math.max(0, score - 1);
+                        } else {
+                            score++;
+                        }
+                        updateScore();
+                        gameArea.removeChild(food);
+                        clearInterval(fallInterval);
+                    } else if (posY > gameArea.clientHeight) {
+                        gameArea.removeChild(food);
+                        clearInterval(fallInterval);
+                    }
+                }
+            }, 20);
+        }
+
+        function isColliding(food, basket) {
+            const foodRect = food.getBoundingClientRect();
+            const basketRect = basket.getBoundingClientRect();
+            return !(foodRect.right < basketRect.left || 
+                     foodRect.left > basketRect.right || 
+                     foodRect.bottom < basketRect.top || 
+                     foodRect.top > basketRect.bottom);
+        }
+
+        function moveBasket(e) {
+            const basketRect = basket.getBoundingClientRect();
+            const gameAreaRect = gameArea.getBoundingClientRect();
+            let newX = e.clientX - gameAreaRect.left - basketRect.width / 2;
+            newX = Math.max(0, Math.min(newX, gameAreaRect.width - basketRect.width));
+            basket.style.left = `${newX}px`;
+        }
+
+        function updateScore() {
+            scoreElement.textContent = `점수: ${score}`;
+            if (score >= 30) {
+                winGame();
+            }
+            if (score % 10 === 0 && score > 0) {
+                gameSpeed *= 1.2;
+            }
+        }
+
+        function winGame() {
+            isGameOver = true;
+            winMessage.style.display = 'block';
+        }
+
+        gameArea.addEventListener('mousemove', moveBasket);
+        setInterval(createFood, 1000);
+    </script>
+</body>
+</html>
